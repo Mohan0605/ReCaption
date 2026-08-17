@@ -1,57 +1,74 @@
 import gradio as gr
-from transformers import BlipProcessor, BlipForConditionalGeneration
-from PIL import Image
+
+from captioner import generate_caption
+from batch import caption_folder
 
 
-# Load the BLIP processor and model
-processor = BlipProcessor.from_pretrained(
-    "Salesforce/blip-image-captioning-base"
-)
+def process_folder(folder):
+    """Process a folder and create a CSV of captions."""
 
-model = BlipForConditionalGeneration.from_pretrained(
-    "Salesforce/blip-image-captioning-base"
-)
-
-
-def generate_caption(image):
-    """Generate a caption for an uploaded image."""
-
-    if image is None:
-        return "Please upload an image."
+    if not folder:
+        return None
 
     try:
-        image = Image.fromarray(image).convert("RGB")
+        return caption_folder(folder)
 
-        prompt = "a photo of"
-
-        inputs = processor(
-            images=image,
-            text=prompt,
-            return_tensors="pt"
-        )
-
-        output = model.generate(**inputs)
-
-        caption = processor.decode(
-            output[0],
-            skip_special_tokens=True
-        )
-
-        return caption
+    except FileNotFoundError:
+        return None
 
     except Exception as e:
-        return f"Error generating caption: {e}"
+        print(f"Error: {e}")
+        return None
 
 
-# Create the Gradio interface
-interface = gr.Interface(
-    fn=generate_caption,
-    inputs=gr.Image(),
-    outputs=gr.Textbox(label="Generated Caption"),
-    title="ReCaption 🖼️🤖",
-    description="Upload an image and let AI generate a caption."
-)
+with gr.Blocks() as interface:
+
+    gr.Markdown("# ReCaption 🖼️🤖")
+
+    gr.Markdown(
+        "Generate AI-powered captions for images."
+    )
+
+    gr.Markdown("## Single Image")
+
+    image_input = gr.Image(
+        label="Upload an image"
+    )
+
+    caption_output = gr.Textbox(
+        label="Generated Caption"
+    )
+
+    caption_button = gr.Button(
+        "Generate Caption"
+    )
+
+    caption_button.click(
+        fn=generate_caption,
+        inputs=image_input,
+        outputs=caption_output
+    )
+
+    gr.Markdown("## Batch Captioning")
+
+    folder_input = gr.Textbox(
+        label="Image folder path",
+        placeholder="Example: images"
+    )
+
+    batch_button = gr.Button(
+        "Generate Batch Captions"
+    )
+
+    csv_output = gr.File(
+        label="Download captions.csv"
+    )
+
+    batch_button.click(
+        fn=process_folder,
+        inputs=folder_input,
+        outputs=csv_output
+    )
 
 
-# Launch the application
 interface.launch()
