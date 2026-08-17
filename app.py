@@ -23,7 +23,13 @@ def generate_caption(image_path):
         print(f"Error opening image: {e}")
         return None
 
-    inputs = processor(images=image, return_tensors="pt")
+    prompt = "a photo of"
+
+    inputs = processor(
+    images=image,
+    text=prompt,
+    return_tensors="pt"
+)
 
     output = model.generate(**inputs)
 
