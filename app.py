@@ -10,27 +10,35 @@ model = BlipForConditionalGeneration.from_pretrained(
     "Salesforce/blip-image-captioning-base"
 )
 
-# Ask the user for an image path
+
+def generate_caption(image_path):
+    """Generate a caption for an image."""
+
+    try:
+        image = Image.open(image_path).convert("RGB")
+    except FileNotFoundError:
+        print("Error: Image file not found.")
+        return None
+    except Exception as e:
+        print(f"Error opening image: {e}")
+        return None
+
+    inputs = processor(images=image, return_tensors="pt")
+
+    output = model.generate(**inputs)
+
+    caption = processor.decode(
+        output[0],
+        skip_special_tokens=True
+    )
+
+    return caption
+
+
 image_path = input("Enter the path to your image: ")
 
-# Open the image
-try:
-    image = Image.open(image_path)
-except FileNotFoundError:
-    print("Error: Image file not found.")
-    exit()
-except Exception as e:
-    print(f"Error opening image: {e}")
-    exit()
+caption = generate_caption(image_path)
 
-# Convert the image into model inputs
-inputs = processor(images=image, return_tensors="pt")
-
-# Generate a caption
-output = model.generate(**inputs)
-
-# Convert the generated tokens into text
-caption = processor.decode(output[0], skip_special_tokens=True)
-
-print("\nGenerated Caption:")
-print(caption)
+if caption:
+    print("\nGenerated Caption:")
+    print(caption)
