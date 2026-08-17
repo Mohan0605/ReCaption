@@ -14,7 +14,14 @@ model = BlipForConditionalGeneration.from_pretrained(
 image_path = input("Enter the path to your image: ")
 
 # Open the image
-image = Image.open(image_path)
+try:
+    image = Image.open(image_path)
+except FileNotFoundError:
+    print("Error: Image file not found.")
+    exit()
+except Exception as e:
+    print(f"Error opening image: {e}")
+    exit()
 
 # Convert the image into model inputs
 inputs = processor(images=image, return_tensors="pt")
